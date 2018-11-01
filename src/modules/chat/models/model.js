@@ -9,6 +9,18 @@ var ChatSchema = new Schema({
         type: String,
         required: 'Please fill a Chat name',
     },
+    img: String,
+    sender: {
+        _id: String,
+        username: String,
+        img: String
+    },
+    receiver: {
+        _id: String,
+        username: String,
+        img: String
+    },
+    message: String,
     created: {
         type: Date,
         default: Date.now
