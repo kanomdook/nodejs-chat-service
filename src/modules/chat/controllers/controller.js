@@ -123,21 +123,44 @@ exports.delete = function (req, res) {
     });
 };
 
-exports.getChatDetail = function (req, res) {
-    Chat.find({ 'sender._id': req.senderid, 'receiver._id': req.receiverid }, function (err, data) {
+exports.getChatDetail = function (req, res, next) {
+    var qr = {
+        $or: [
+            { 'sender._id': req.senderid, 'receiver._id': req.receiverid },
+            { 'receiver._id': req.senderid, 'sender._id': req.receiverid }
+        ]
+    };
+    Chat.find(qr, function (err, data) {
         if (err) {
             return res.status(400).send({
                 status: 400,
                 message: errorHandler.getErrorMessage(err)
             });
         } else {
-            res.jsonp({
-                status: 200,
-                data: data || []
-            });
+            console.log(data);
+            req.chatDetails = data;
+            next();
         }
     });
+};
 
+exports.sendChatDetail = function (req, res) {
+    var data = [];
+    req.chatDetails.forEach(chat => {
+        data.push({
+            _id: chat._id,
+            user: {
+                _id: chat.sender._id,
+                img: chat.sender.img
+            },
+            chat: chat.message,
+            dateTime: chat.created
+        });
+    });
+    res.jsonp({
+        status: 200,
+        data: data
+    });
 };
 
 exports.getReceiverid = function (req, res, next, receiverid) {

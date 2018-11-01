@@ -269,6 +269,9 @@ describe('Chat CRUD routes tests', function () {
                         var resp = res.body;
                         assert.equal(resp.status, 200);
                         assert.equal(resp.data.length, 1);
+                        assert.equal(resp.data[0].user._id, mockup.receiver._id);
+                        assert.equal(resp.data[0].user.img, mockup.receiver.img);
+                        assert.equal(resp.data[0].chat, mockup.message);
                         done();
                     });
             });

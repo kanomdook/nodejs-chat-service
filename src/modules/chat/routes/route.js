@@ -14,7 +14,7 @@ module.exports = function (app) {
         .delete(controller.delete);
 
     app.route(url + '/:receiverid/:senderid')
-        .get(controller.getChatDetail);
+        .get(controller.getChatDetail, controller.sendChatDetail);
 
     app.param('chatId', controller.getByID);
 
