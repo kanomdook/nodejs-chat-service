@@ -10,7 +10,7 @@
   "keywords": [
     "nodejs server"
   ],
-  "author": "dev@casan.com",
+  "author": "dookdik",
   "license": "MIT",
   "dependencies": {
     "acl": "^0.4.11",
