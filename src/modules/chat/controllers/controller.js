@@ -137,7 +137,6 @@ exports.getChatDetail = function (req, res, next) {
                 message: errorHandler.getErrorMessage(err)
             });
         } else {
-            console.log(data);
             req.chatDetails = data;
             next();
         }
