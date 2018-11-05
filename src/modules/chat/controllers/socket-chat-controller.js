@@ -7,7 +7,7 @@ module.exports = (server) => {
         console.log('user connected');
         socket.on('joined', function (data) {
             joinedData = data;
-            getChatListBySender(socket);
+            getChatListByReceiver(socket);
         });
         socket.on('disconnect', function () {
             console.log('user disconnected');
@@ -17,7 +17,7 @@ module.exports = (server) => {
     return io;
 };
 
-function getChatListBySender(socket) {
+function getChatListByReceiver(socket) {
     console.log(joinedData);
     Chat.find().exec(function (err, result) {
         if (err) {
@@ -29,18 +29,21 @@ function getChatListBySender(socket) {
                 if (data.receiver._id === joinedData.receiver._id) {
                     if (uniqReceiver.indexOf(data.sender._id) === -1) {
                         uniqReceiver.push(data.sender._id);
+                        var chats = result.filter(el => {
+                            return el.sender._id === data.sender._id || el.receiver._id === data.sender._id;
+                        });
                         datas.push({
                             _id: data.sender._id,
                             name: data.sender.username,
                             img: data.sender.img,
-                            dateTime: result[result.length - 1].created,
-                            lastChat: result[result.length - 1].message,
+                            dateTime: chats[chats.length - 1].created,
+                            lastChat: chats[chats.length - 1].message,
                         });
                     }
                 }
 
             });
-            socket.emit('message', datas);
+            socket.emit('message', datas || []);
         }
     });
 };
