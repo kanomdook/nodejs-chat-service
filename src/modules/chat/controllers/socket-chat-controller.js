@@ -7,6 +7,8 @@ module.exports = (server) => {
         console.log('user connected');
         socket.on('joined', function (data) {
             joinedData = data;
+            // socket.join(room);
+            // socket.broadcast.to(data.roomid).emit('receiving', result);
             getChatListByReceiver(socket);
         });
         socket.on('disconnect', function () {
@@ -19,7 +21,7 @@ module.exports = (server) => {
 
 function getChatListByReceiver(socket) {
     console.log(joinedData);
-    Chat.find().exec(function (err, result) {
+    Chat.find().sort({ created: -1 }).exec(function (err, result) {
         if (err) {
             socket.emit('message', []);
         } else {
@@ -32,6 +34,7 @@ function getChatListByReceiver(socket) {
                         var chats = result.filter(el => {
                             return el.sender._id === data.sender._id || el.receiver._id === data.sender._id;
                         });
+                        chats.reverse();
                         datas.push({
                             _id: data.sender._id,
                             name: data.sender.username,
