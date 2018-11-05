@@ -7,15 +7,19 @@ module.exports = (server) => {
         console.log('user connected');
         socket.on('joined', function (data) {
             joinedData = data;
-            // socket.join(room);
-            // socket.broadcast.to(data.roomid).emit('receiving', result);
-            getChatListByReceiver(socket);
+            console.log('room : ', joinedData.room_id);
+            socket.join(joinedData.room_id, function () {
+                console.log(socket.id + ' now in rooms ', socket.rooms);
+            });
+            // io.to(joinedData.room_id).emit('message', []);
+            // socket.broadcast.to().emit('', {});
+            getChatListByReceiver(io);
         });
         socket.on('message', function (data) {
-            createMessage(data, socket);
+            createMessage(data, io);
         });
         socket.on('chat-list', function (data) {
-            getMessageDetailList(data, socket);
+            getMessageDetailList(data, io);
         });
         socket.on('disconnect', function () {
             console.log('user disconnected');
@@ -25,10 +29,11 @@ module.exports = (server) => {
     return io;
 };
 
-function getChatListByReceiver(socket) {
+function getChatListByReceiver(io) {
     Chat.find().sort({ created: -1 }).exec(function (err, result) {
         if (err) {
-            socket.emit('message', []);
+            // socket.emit('message', []);
+            io.to(joinedData.room_id).emit('message', []);
         } else {
             var datas = [];
             var uniqReceiver = [];
@@ -51,23 +56,25 @@ function getChatListByReceiver(socket) {
                 }
 
             });
-            socket.emit('message', datas || []);
+            // socket.emit('message', datas || []);
+            io.to(joinedData.room_id).emit('message', datas || []);
         }
     });
 };
 
-function createMessage(data, socket) {
+function createMessage(data, io) {
     var newChat = new Chat(data);
     newChat.save(function (err, result) {
         if (err) {
-            socket.emit('chat-list', []);
+            // socket.emit('chat-list', []);
+            io.to(joinedData.room_id).emit('chat-list', []);
         } else {
-            getMessageDetailList(data, socket);
+            getMessageDetailList(data, io);
         }
     });
 };
 
-function getMessageDetailList(data, socket) {
+function getMessageDetailList(data, io) {
     var qr = {
         $or: [
             { 'sender._id': data.sender._id, 'receiver._id': data.receiver._id },
@@ -76,7 +83,8 @@ function getMessageDetailList(data, socket) {
     };
     Chat.find(qr, function (err, result) {
         if (err) {
-            socket.emit('chat-list', []);
+            // socket.emit('chat-list', []);
+            io.to(joinedData.room_id).emit('chat-list', []);
         } else {
             var data = [];
             result.forEach(chat => {
@@ -90,7 +98,8 @@ function getMessageDetailList(data, socket) {
                     dateTime: chat.created
                 });
             });
-            socket.emit('chat-list', data);
+            // socket.emit('chat-list', data);
+            io.to(joinedData.room_id).emit('chat-list', data);
         }
     });
 };
