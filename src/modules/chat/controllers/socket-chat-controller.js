@@ -11,6 +11,12 @@ module.exports = (server) => {
             // socket.broadcast.to(data.roomid).emit('receiving', result);
             getChatListByReceiver(socket);
         });
+        socket.on('message', function (data) {
+            createMessage(data, socket);
+        });
+        socket.on('chat-list', function (data) {
+            getMessageDetailList(data, socket);
+        });
         socket.on('disconnect', function () {
             console.log('user disconnected');
         });
@@ -20,7 +26,6 @@ module.exports = (server) => {
 };
 
 function getChatListByReceiver(socket) {
-    console.log(joinedData);
     Chat.find().sort({ created: -1 }).exec(function (err, result) {
         if (err) {
             socket.emit('message', []);
@@ -47,6 +52,45 @@ function getChatListByReceiver(socket) {
 
             });
             socket.emit('message', datas || []);
+        }
+    });
+};
+
+function createMessage(data, socket) {
+    var newChat = new Chat(data);
+    newChat.save(function (err, result) {
+        if (err) {
+            socket.emit('chat-list', []);
+        } else {
+            getMessageDetailList(data, socket);
+        }
+    });
+};
+
+function getMessageDetailList(data, socket) {
+    var qr = {
+        $or: [
+            { 'sender._id': data.sender._id, 'receiver._id': data.receiver._id },
+            { 'receiver._id': data.sender._id, 'sender._id': data.receiver._id }
+        ]
+    };
+    Chat.find(qr, function (err, result) {
+        if (err) {
+            socket.emit('chat-list', []);
+        } else {
+            var data = [];
+            result.forEach(chat => {
+                data.push({
+                    _id: chat._id,
+                    user: {
+                        _id: chat.sender._id,
+                        img: chat.sender.img
+                    },
+                    chat: chat.message,
+                    dateTime: chat.created
+                });
+            });
+            socket.emit('chat-list', data);
         }
     });
 };
