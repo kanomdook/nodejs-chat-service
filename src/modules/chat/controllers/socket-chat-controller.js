@@ -1,0 +1,46 @@
+var mongoose = require('mongoose'),
+    Chat = mongoose.model('Chat'),
+    joinedData;
+module.exports = (server) => {
+    const io = require('socket.io')(server);
+    io.on('connection', function (socket) {
+        console.log('user connected');
+        socket.on('joined', function (data) {
+            joinedData = data;
+            getChatListBySender(socket);
+        });
+        socket.on('disconnect', function () {
+            console.log('user disconnected');
+        });
+    });
+
+    return io;
+};
+
+function getChatListBySender(socket) {
+    console.log(joinedData);
+    Chat.find().exec(function (err, result) {
+        if (err) {
+            socket.emit('message', []);
+        } else {
+            var datas = [];
+            var uniqReceiver = [];
+            result.forEach(data => {
+                if (data.receiver._id === joinedData.receiver._id) {
+                    if (uniqReceiver.indexOf(data.sender._id) === -1) {
+                        uniqReceiver.push(data.sender._id);
+                        datas.push({
+                            _id: data.sender._id,
+                            name: data.sender.username,
+                            img: data.sender.img,
+                            dateTime: result[result.length - 1].created,
+                            lastChat: result[result.length - 1].message,
+                        });
+                    }
+                }
+
+            });
+            socket.emit('message', datas);
+        }
+    });
+};
