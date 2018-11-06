@@ -6,28 +6,23 @@ var request = require('supertest'),
     jwt = require('jsonwebtoken'),
     mongoose = require('mongoose'),
     app = require('../../../config/express'),
-    Chat = mongoose.model('Chat');
+    Room = mongoose.model('Room');
 
 var credentials,
     token,
     mockup;
 
-describe('Chat CRUD routes tests', function () {
+describe('Room CRUD routes tests', function () {
 
     before(function (done) {
         mockup = {
             name: 'name',
-            sender: {
-                _id: '1',
-                username: 'dook',
-                img: 'aaa.jpg'
-            },
-            receiver: {
-                _id: '2',
-                username: 'shop A',
-                img: 'bbb.jpg'
-            },
-            message: 'Hello'
+            roomid: '999999999',
+            members: [{
+                _id: '1'
+            }, {
+                _id: '2'
+            }]
         };
         credentials = {
             username: 'username',
@@ -43,12 +38,24 @@ describe('Chat CRUD routes tests', function () {
         done();
     });
 
-    it('should be Chat get use token', (done) => {
-
-        //post
+    it('should be Room get use token', (done) => {
         request(app)
-            .post('/api/chats')
-            // .set('Authorization', 'Bearer ' + token)
+            .get('/api/rooms')
+            .set('Authorization', 'Bearer ' + token)
+            .expect(200)
+            .end((err, res) => {
+                if (err) {
+                    return done(err);
+                }
+                var resp = res.body;
+                done();
+            });
+    });
+
+    it('should be create chat room with members', function (done) {
+        request(app)
+            .post('/api/rooms')
+            .set('Authorization', 'Bearer ' + token)
             .send(mockup)
             .expect(200)
             .end(function (err, res) {
@@ -56,28 +63,21 @@ describe('Chat CRUD routes tests', function () {
                     return done(err);
                 }
                 var resp = res.body;
-                request(app)
-                    .get('/api/chats')
-                    // .set('Authorization', 'Bearer ' + token)
-                    .expect(200)
-                    .end((err, res) => {
-                        if (err) {
-                            return done(err);
-                        }
-                        var resp2 = res.body;
-                        assert.equal(resp2.status, 200);
-                        assert.equal(resp2.data[0].name, mockup.receiver.username);
-                        assert.equal(resp2.data[0].img, mockup.receiver.img);
-                        assert.equal(resp2.data[0].lastChat, mockup.message);
-                        done();
-                    });
+                assert.equal(resp.status, 200);
+                assert.equal(resp.data.name, mockup.name);
+                assert.equal(resp.data.roomid, mockup.roomid);
+                assert.equal(resp.data.members.length, 2);
+                assert.equal(resp.data.members[0]._id, '1');
+                assert.equal(resp.data.members[1]._id, '2');
+                done();
             });
+
     });
 
-    it('should be Chat get by id', function (done) {
+    xit('should be Room get by id', function (done) {
 
         request(app)
-            .post('/api/chats')
+            .post('/api/rooms')
             .set('Authorization', 'Bearer ' + token)
             .send(mockup)
             .expect(200)
@@ -87,7 +87,7 @@ describe('Chat CRUD routes tests', function () {
                 }
                 var resp = res.body;
                 request(app)
-                    .get('/api/chats/' + resp.data._id)
+                    .get('/api/rooms/' + resp.data._id)
                     .set('Authorization', 'Bearer ' + token)
                     .expect(200)
                     .end(function (err, res) {
@@ -97,17 +97,15 @@ describe('Chat CRUD routes tests', function () {
                         var resp = res.body;
                         assert.equal(resp.status, 200);
                         assert.equal(resp.data.name, mockup.name);
-                        assert.equal(resp.data.sender.username, mockup.sender.username);
-                        assert.equal(resp.data.message, mockup.message);
                         done();
                     });
             });
 
     });
 
-    it('should be Chat post use token', (done) => {
+    xit('should be Room post use token', (done) => {
         request(app)
-            .post('/api/chats')
+            .post('/api/rooms')
             .set('Authorization', 'Bearer ' + token)
             .send(mockup)
             .expect(200)
@@ -121,10 +119,10 @@ describe('Chat CRUD routes tests', function () {
             });
     });
 
-    it('should be chat put use token', function (done) {
+    xit('should be room put use token', function (done) {
 
         request(app)
-            .post('/api/chats')
+            .post('/api/rooms')
             .set('Authorization', 'Bearer ' + token)
             .send(mockup)
             .expect(200)
@@ -137,7 +135,7 @@ describe('Chat CRUD routes tests', function () {
                     name: 'name update'
                 }
                 request(app)
-                    .put('/api/chats/' + resp.data._id)
+                    .put('/api/rooms/' + resp.data._id)
                     .set('Authorization', 'Bearer ' + token)
                     .send(update)
                     .expect(200)
@@ -153,10 +151,10 @@ describe('Chat CRUD routes tests', function () {
 
     });
 
-    it('should be chat delete use token', function (done) {
+    xit('should be room delete use token', function (done) {
 
         request(app)
-            .post('/api/chats')
+            .post('/api/rooms')
             .set('Authorization', 'Bearer ' + token)
             .send(mockup)
             .expect(200)
@@ -166,7 +164,7 @@ describe('Chat CRUD routes tests', function () {
                 }
                 var resp = res.body;
                 request(app)
-                    .delete('/api/chats/' + resp.data._id)
+                    .delete('/api/rooms/' + resp.data._id)
                     .set('Authorization', 'Bearer ' + token)
                     .expect(200)
                     .end(done);
@@ -174,9 +172,9 @@ describe('Chat CRUD routes tests', function () {
 
     });
 
-    xit('should be chat get not use token', (done) => {
+    xit('should be room get not use token', (done) => {
         request(app)
-            .get('/api/chats')
+            .get('/api/rooms')
             .expect(403)
             .expect({
                 status: 403,
@@ -185,10 +183,10 @@ describe('Chat CRUD routes tests', function () {
             .end(done);
     });
 
-    xit('should be chat post not use token', function (done) {
+    xit('should be room post not use token', function (done) {
 
         request(app)
-            .post('/api/chats')
+            .post('/api/rooms')
             .send(mockup)
             .expect(403)
             .expect({
@@ -199,10 +197,10 @@ describe('Chat CRUD routes tests', function () {
 
     });
 
-    xit('should be chat put not use token', function (done) {
+    xit('should be room put not use token', function (done) {
 
         request(app)
-            .post('/api/chats')
+            .post('/api/rooms')
             .set('Authorization', 'Bearer ' + token)
             .send(mockup)
             .expect(200)
@@ -215,7 +213,7 @@ describe('Chat CRUD routes tests', function () {
                     name: 'name update'
                 }
                 request(app)
-                    .put('/api/chats/' + resp.data._id)
+                    .put('/api/rooms/' + resp.data._id)
                     .send(update)
                     .expect(403)
                     .expect({
@@ -227,10 +225,10 @@ describe('Chat CRUD routes tests', function () {
 
     });
 
-    xit('should be chat delete not use token', function (done) {
+    xit('should be room delete not use token', function (done) {
 
         request(app)
-            .post('/api/chats')
+            .post('/api/rooms')
             .set('Authorization', 'Bearer ' + token)
             .send(mockup)
             .expect(200)
@@ -240,7 +238,7 @@ describe('Chat CRUD routes tests', function () {
                 }
                 var resp = res.body;
                 request(app)
-                    .delete('/api/chats/' + resp.data._id)
+                    .delete('/api/rooms/' + resp.data._id)
                     .expect(403)
                     .expect({
                         status: 403,
@@ -251,34 +249,8 @@ describe('Chat CRUD routes tests', function () {
 
     });
 
-    it('should be get chat detail', function (done) {
-        request(app)
-            .post('/api/chats')
-            // .set('Authorization', 'Bearer ' + token)
-            .send(mockup)
-            .expect(200)
-            .end(function (err, res) {
-                if (err) {
-                    return done(err);
-                }
-                var resp = res.body;
-                request(app)
-                    .get('/api/chats/' + mockup.receiver._id + '/' + mockup.sender._id)
-                    .expect(200)
-                    .end(function (err, res) {
-                        var resp = res.body;
-                        assert.equal(resp.status, 200);
-                        assert.equal(resp.data.length, 1);
-                        assert.equal(resp.data[0].user._id, mockup.sender._id);
-                        assert.equal(resp.data[0].user.img, mockup.sender.img);
-                        assert.equal(resp.data[0].chat, mockup.message);
-                        done();
-                    });
-            });
-    });
-
     afterEach(function (done) {
-        Chat.remove().exec(done);
+        Room.remove().exec(done);
     });
 
 });
