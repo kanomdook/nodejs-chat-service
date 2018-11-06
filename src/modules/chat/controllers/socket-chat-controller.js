@@ -1,4 +1,5 @@
 var mongoose = require('mongoose'),
+    md5 = require('md5'),
     Chat = mongoose.model('Chat'),
     Room = mongoose.model('Room'),
     joinedData;
@@ -33,9 +34,10 @@ function checkJoinRoom(data, socket) {
             console.log(err);
         } else {
             if (!result) {
+                const md5Gen = md5(Date.now());
                 const reqBody = {
-                    name: 'name',
-                    roomid: '1111111111',
+                    name: md5Gen,
+                    roomid: md5Gen,
                     members: [{
                         _id: data.sender._id
                     },
