@@ -55,7 +55,6 @@ describe('Room CRUD routes tests', function () {
     it('should be create chat room with members', function (done) {
         request(app)
             .post('/api/rooms')
-            .set('Authorization', 'Bearer ' + token)
             .send(mockup)
             .expect(200)
             .end(function (err, res) {

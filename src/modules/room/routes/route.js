@@ -4,7 +4,7 @@ var controller = require('../controllers/controller'),
 module.exports = function (app) {
     var url = '/api/rooms';
     var urlWithParam = '/api/rooms/:roomId';
-    app.route(url).all(policy.isAllowed)
+    app.route(url)
         .get(controller.getList)
         .post(controller.create);
 

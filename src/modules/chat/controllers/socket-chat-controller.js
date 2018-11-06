@@ -1,19 +1,17 @@
 var mongoose = require('mongoose'),
     Chat = mongoose.model('Chat'),
+    Room = mongoose.model('Room'),
     joinedData;
 module.exports = (server) => {
     const io = require('socket.io')(server);
     io.on('connection', function (socket) {
         console.log('user connected');
-        socket.on('joined', function (data) {
+        socket.on('init', function (data) {
             joinedData = data;
-            console.log('room : ', joinedData.room_id);
-            socket.join(joinedData.room_id, function () {
-                console.log(socket.id + ' now in rooms ', socket.rooms);
-            });
-            // io.to(joinedData.room_id).emit('message', []);
-            // socket.broadcast.to().emit('', {});
-            getChatListByReceiver(io);
+            getChatListByReceiver(socket);
+        });
+        socket.on('joined', function (data) {
+            checkJoinRoom(data, socket);
         });
         socket.on('message', function (data) {
             createMessage(data, io);
@@ -29,11 +27,50 @@ module.exports = (server) => {
     return io;
 };
 
-function getChatListByReceiver(io) {
+function checkJoinRoom(data, socket) {
+    Room.findOne({ 'members._id': { $all: [data.sender._id, data.receiver._id] } }).exec(function (err, result) {
+        if (err) {
+            console.log(err);
+        } else {
+            if (!result) {
+                const reqBody = {
+                    name: 'name',
+                    roomid: '1111111111',
+                    members: [{
+                        _id: data.sender._id
+                    },
+                    {
+                        _id: data.receiver._id
+                    }]
+                }
+                const newRoom = new Room(reqBody);
+                newRoom.save(function (saveErr, saveResult) {
+                    if (saveErr) {
+                        console.log(saveErr);
+                    } else {
+                        joinedData.room_id = saveResult.roomid;
+                        socket.join(joinedData.room_id, function () {
+                            console.log(socket.id + ' now in rooms ', socket.rooms);
+                        });
+                    }
+                });
+            } else {
+                joinedData.room_id = result.roomid;
+                socket.join(joinedData.room_id, function () {
+                    console.log(socket.id + ' now in rooms ', socket.rooms);
+                });
+            }
+        }
+    });
+    // io.to(joinedData.room_id).emit('message', []);
+    // socket.broadcast.to().emit('', {});
+}
+
+function getChatListByReceiver(socket) {
     Chat.find().sort({ created: -1 }).exec(function (err, result) {
         if (err) {
-            // socket.emit('message', []);
-            io.to(joinedData.room_id).emit('message', []);
+            socket.emit('message', []);
+            // io.to(joinedData.room_id).emit('message', []);
         } else {
             var datas = [];
             var uniqReceiver = [];
@@ -56,8 +93,8 @@ function getChatListByReceiver(io) {
                 }
 
             });
-            // socket.emit('message', datas || []);
-            io.to(joinedData.room_id).emit('message', datas || []);
+            socket.emit('message', datas || []);
+            // io.to(joinedData.room_id).emit('message', datas || []);
         }
     });
 };
