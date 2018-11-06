@@ -15,7 +15,7 @@ module.exports = (server) => {
             checkJoinRoom(data, socket);
         });
         socket.on('message', function (data) {
-            createMessage(data, io);
+            createMessage(data, io, socket);
         });
         socket.on('chat-list', function (data) {
             getMessageDetailList(data, io);
@@ -77,20 +77,31 @@ function getChatListByReceiver(socket) {
             var datas = [];
             var uniqReceiver = [];
             result.forEach(data => {
-                if (data.receiver._id === joinedData.receiver._id) {
+                if (data.receiver._id === joinedData.receiver._id || data.sender._id === joinedData.receiver._id) {
                     if (uniqReceiver.indexOf(data.sender._id) === -1) {
                         uniqReceiver.push(data.sender._id);
                         var chats = result.filter(el => {
                             return el.sender._id === data.sender._id || el.receiver._id === data.sender._id;
                         });
                         chats.reverse();
-                        datas.push({
-                            _id: data.sender._id,
-                            name: data.sender.username,
-                            img: data.sender.img,
-                            dateTime: chats[chats.length - 1].created,
-                            lastChat: chats[chats.length - 1].message,
-                        });
+                        if (data.sender._id === joinedData.receiver._id) {
+                            datas.push({
+                                _id: data.sender._id,
+                                name: data.sender.username,
+                                img: data.sender.img,
+                                dateTime: chats[chats.length - 1].created,
+                                lastChat: chats[chats.length - 1].message,
+                                ref: data.receiver
+                            });
+                        } else {
+                            datas.push({
+                                _id: data.sender._id,
+                                name: data.sender.username,
+                                img: data.sender.img,
+                                dateTime: chats[chats.length - 1].created,
+                                lastChat: chats[chats.length - 1].message,
+                            });
+                        }
                     }
                 }
 
@@ -101,7 +112,7 @@ function getChatListByReceiver(socket) {
     });
 };
 
-function createMessage(data, io) {
+function createMessage(data, io, socket) {
     var newChat = new Chat(data);
     newChat.save(function (err, result) {
         if (err) {
@@ -109,6 +120,7 @@ function createMessage(data, io) {
             io.to(joinedData.room_id).emit('chat-list', []);
         } else {
             getMessageDetailList(data, io);
+            getChatListByReceiver(socket);
         }
     });
 };
