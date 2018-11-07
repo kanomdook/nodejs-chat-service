@@ -9,7 +9,7 @@ module.exports = (server) => {
         console.log('user connected');
         socket.on('init', function (data) {
             joinedData = data;
-            getChatListByReceiver(socket);
+            getChatListByReceiver(socket, io);
         });
         socket.on('joined', function (data) {
             checkJoinRoom(data, socket);
@@ -68,10 +68,11 @@ function checkJoinRoom(data, socket) {
     // socket.broadcast.to().emit('', {});
 }
 
-function getChatListByReceiver(socket) {
+function getChatListByReceiver(socket, io) {
     Chat.find().sort({ created: -1 }).exec(function (err, result) {
         if (err) {
-            socket.emit('message', []);
+            io.sockets.emit('message', []);
+            // socket.emit('message', []);
             // io.to(joinedData.room_id).emit('message', []);
         } else {
             var datas = [];
@@ -106,7 +107,8 @@ function getChatListByReceiver(socket) {
                 }
 
             });
-            socket.emit('message', datas || []);
+            io.sockets.emit('message', datas || []);
+            // socket.emit('message', datas || []);
             // io.to(joinedData.room_id).emit('message', datas || []);
         }
     });
@@ -120,7 +122,7 @@ function createMessage(data, io, socket) {
             io.to(joinedData.room_id).emit('chat-list', []);
         } else {
             getMessageDetailList(data, io);
-            getChatListByReceiver(socket);
+            getChatListByReceiver(socket, io);
         }
     });
 };
